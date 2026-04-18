@@ -1,0 +1,478 @@
+{
+  "Acmispon glaber": {
+    "common": "deerweed",
+    "iconic_taxon": "Plantae"
+  },
+  "Anthopleura sola": {
+    "common": "Sunburst Anemone",
+    "iconic_taxon": "Animalia"
+  },
+  "Apis mellifera": {
+    "common": "Western Honey Bee",
+    "iconic_taxon": "Insecta"
+  },
+  "Aplidium californicum": {
+    "common": "Pacific Sea Pork",
+    "iconic_taxon": "Animalia"
+  },
+  "Aplysia californica": {
+    "common": "California Seahare",
+    "iconic_taxon": "Mollusca"
+  },
+  "Armadillidium vulgare": {
+    "common": "Common Pill Woodlouse",
+    "iconic_taxon": "Animalia"
+  },
+  "Armina californica": {
+    "common": "Striped Nudibranch",
+    "iconic_taxon": "Mollusca"
+  },
+  "Artemisia californica": {
+    "common": "California sagebrush",
+    "iconic_taxon": "Plantae"
+  },
+  "Baccharis pilularis": {
+    "common": "coyote brush",
+    "iconic_taxon": "Plantae"
+  },
+  "Blepharipoda occidentalis": {
+    "common": "Spiny Mole Crab",
+    "iconic_taxon": "Animalia"
+  },
+  "Bombus vosnesenskii": {
+    "common": "Yellow-faced Bumble Bee",
+    "iconic_taxon": "Insecta"
+  },
+  "Buteo jamaicensis": {
+    "common": "Red-tailed Hawk",
+    "iconic_taxon": "Aves"
+  },
+  "Buteo lineatus": {
+    "common": "Red-shouldered Hawk",
+    "iconic_taxon": "Aves"
+  },
+  "Callianax biplicata": {
+    "common": "Purple Olive Snail",
+    "iconic_taxon": "Mollusca"
+  },
+  "Calypte anna": {
+    "common": "Anna's Hummingbird",
+    "iconic_taxon": "Aves"
+  },
+  "Canis latrans": {
+    "common": "Coyote",
+    "iconic_taxon": "Mammalia"
+  },
+  "Chrysaora colorata": {
+    "common": "Purple-striped Sea Nettle",
+    "iconic_taxon": "Animalia"
+  },
+  "Cleomella arborea": {
+    "common": "Bladderpod",
+    "iconic_taxon": "Plantae"
+  },
+  "Coccinella septempunctata": {
+    "common": "Seven-spotted Lady Beetle",
+    "iconic_taxon": "Insecta"
+  },
+  "Cornu aspersum": {
+    "common": "Garden Snail",
+    "iconic_taxon": "Mollusca"
+  },
+  "Corvus brachyrhynchos": {
+    "common": "American Crow",
+    "iconic_taxon": "Aves"
+  },
+  "Corvus corax": {
+    "common": "Common Raven",
+    "iconic_taxon": "Aves"
+  },
+  "Cotinis mutabilis": {
+    "common": "Figeater Beetle",
+    "iconic_taxon": "Insecta"
+  },
+  "Cylindropuntia prolifera": {
+    "common": "Coast Cholla",
+    "iconic_taxon": "Plantae"
+  },
+  "Danaus plexippus": {
+    "common": "Monarch",
+    "iconic_taxon": "Insecta"
+  },
+  "Dendraster excentricus": {
+    "common": "Eccentric Sand Dollar",
+    "iconic_taxon": "Animalia"
+  },
+  "Diplacus puniceus": {
+    "common": "red bush monkeyflower",
+    "iconic_taxon": "Plantae"
+  },
+  "Dipterostemon capitatus": {
+    "common": "blue dicks",
+    "iconic_taxon": "Plantae"
+  },
+  "Donax gouldii": {
+    "common": "Gould Beanclam",
+    "iconic_taxon": "Mollusca"
+  },
+  "Dosima fascicularis": {
+    "common": "Buoy Barnacle",
+    "iconic_taxon": "Animalia"
+  },
+  "Dudleya edulis": {
+    "common": "Fingertips",
+    "iconic_taxon": "Plantae"
+  },
+  "Dudleya pulverulenta": {
+    "common": "Chalk Dudleya",
+    "iconic_taxon": "Plantae"
+  },
+  "Echium candicans": {
+    "common": "Pride of Madeira",
+    "iconic_taxon": "Plantae"
+  },
+  "Egretta thula": {
+    "common": "Snowy Egret",
+    "iconic_taxon": "Aves"
+  },
+  "Elgaria multicarinata": {
+    "common": "Southern Alligator Lizard",
+    "iconic_taxon": "Reptilia"
+  },
+  "Emerita analoga": {
+    "common": "Pacific Sand Crab",
+    "iconic_taxon": "Animalia"
+  },
+  "Encelia californica": {
+    "common": "California brittlebush",
+    "iconic_taxon": "Plantae"
+  },
+  "Eriogonum fasciculatum": {
+    "common": "California Buckwheat",
+    "iconic_taxon": "Plantae"
+  },
+  "Eucheilota bakeri": {
+    "common": "Bean Clam Hydroid",
+    "iconic_taxon": "Animalia"
+  },
+  "Euphagus cyanocephalus": {
+    "common": "Brewer's Blackbird",
+    "iconic_taxon": "Aves"
+  },
+  "Falco peregrinus": {
+    "common": "Peregrine Falcon",
+    "iconic_taxon": "Aves"
+  },
+  "Flabellinopsis iodinea": {
+    "common": "Spanish Shawl",
+    "iconic_taxon": "Mollusca"
+  },
+  "Glebionis coronaria": {
+    "common": "Garland Daisy",
+    "iconic_taxon": "Plantae"
+  },
+  "Gryllodes sigillatus": {
+    "common": "Tropical House Cricket",
+    "iconic_taxon": "Insecta"
+  },
+  "Haemorhous mexicanus": {
+    "common": "House Finch",
+    "iconic_taxon": "Aves"
+  },
+  "Harmonia axyridis": {
+    "common": "Asian Lady Beetle",
+    "iconic_taxon": "Insecta"
+  },
+  "Hermissenda opalescens": {
+    "common": "Opalescent Nudibranch",
+    "iconic_taxon": "Mollusca"
+  },
+  "Heterodontus francisci": {
+    "common": "Horn Shark",
+    "iconic_taxon": "Animalia"
+  },
+  "Heteromeles arbutifolia": {
+    "common": "Toyon",
+    "iconic_taxon": "Plantae"
+  },
+  "Hylephila phyleus": {
+    "common": "Fiery Skipper",
+    "iconic_taxon": "Insecta"
+  },
+  "Hyles lineata": {
+    "common": "White-lined Sphinx",
+    "iconic_taxon": "Insecta"
+  },
+  "Hypanus dipterurus": {
+    "common": "Diamond Stingray",
+    "iconic_taxon": "Animalia"
+  },
+  "Isocoma menziesii": {
+    "common": "Coastal Goldenbush",
+    "iconic_taxon": "Plantae"
+  },
+  "Junco hyemalis": {
+    "common": "Dark-eyed Junco",
+    "iconic_taxon": "Aves"
+  },
+  "Laetiporus gilbertsonii": {
+    "common": "Western Hardwood Sulphur Shelf",
+    "iconic_taxon": "Fungi"
+  },
+  "Larus delawarensis": {
+    "common": "Ring-billed Gull",
+    "iconic_taxon": "Aves"
+  },
+  "Larus heermanni": {
+    "common": "Heermann's Gull",
+    "iconic_taxon": "Aves"
+  },
+  "Larus occidentalis": {
+    "common": "Western Gull",
+    "iconic_taxon": "Aves"
+  },
+  "Latrodectus geometricus": {
+    "common": "Brown Widow",
+    "iconic_taxon": "Arachnida"
+  },
+  "Leiothlypis celata": {
+    "common": "Orange-crowned Warbler",
+    "iconic_taxon": "Aves"
+  },
+  "Limonium perezii": {
+    "common": "Perez's sea lavender",
+    "iconic_taxon": "Plantae"
+  },
+  "Limosa fedoa": {
+    "common": "Marbled Godwit",
+    "iconic_taxon": "Aves"
+  },
+  "Linepithema humile": {
+    "common": "Argentine Ant",
+    "iconic_taxon": "Insecta"
+  },
+  "Lysimachia arvensis": {
+    "common": "scarlet pimpernel",
+    "iconic_taxon": "Plantae"
+  },
+  "Marah macrocarpa": {
+    "common": "Chilicothe",
+    "iconic_taxon": "Plantae"
+  },
+  "Melilotus indicus": {
+    "common": "small melilot",
+    "iconic_taxon": "Plantae"
+  },
+  "Melospiza melodia": {
+    "common": "Song Sparrow",
+    "iconic_taxon": "Aves"
+  },
+  "Melozone crissalis": {
+    "common": "California Towhee",
+    "iconic_taxon": "Aves"
+  },
+  "Metacarcinus anthonyi": {
+    "common": "Yellow Rock Crab",
+    "iconic_taxon": "Animalia"
+  },
+  "Mimus polyglottos": {
+    "common": "Northern Mockingbird",
+    "iconic_taxon": "Aves"
+  },
+  "Myliobatis californica": {
+    "common": "Bat Ray",
+    "iconic_taxon": "Animalia"
+  },
+  "Mytilus californianus": {
+    "common": "California Mussel",
+    "iconic_taxon": "Mollusca"
+  },
+  "Navanax inermis": {
+    "common": "California Aglaja",
+    "iconic_taxon": "Mollusca"
+  },
+  "Numenius hudsonicus": {
+    "common": "Hudsonian Whimbrel",
+    "iconic_taxon": "Aves"
+  },
+  "Nymphalis antiopa": {
+    "common": "Mourning Cloak",
+    "iconic_taxon": "Insecta"
+  },
+  "Octopus bimaculoides": {
+    "common": "Lesser Two-spot Octopus",
+    "iconic_taxon": "Mollusca"
+  },
+  "Omphalotus olivascens": {
+    "common": "western jack-o'-lantern",
+    "iconic_taxon": "Fungi"
+  },
+  "Oxalis pes-caprae": {
+    "common": "Bermuda buttercup",
+    "iconic_taxon": "Plantae"
+  },
+  "Pachygrapsus crassipes": {
+    "common": "Striped Shore Crab",
+    "iconic_taxon": "Animalia"
+  },
+  "Pandion haliaetus": {
+    "common": "Osprey",
+    "iconic_taxon": "Aves"
+  },
+  "Panulirus interruptus": {
+    "common": "California Spiny Lobster",
+    "iconic_taxon": "Animalia"
+  },
+  "Paraconcavus pacificus": {
+    "common": "Red-striped Acorn Barnacle",
+    "iconic_taxon": "Animalia"
+  },
+  "Paropsis atomaria": {
+    "common": "Dotted Paropsine Leaf Beetle",
+    "iconic_taxon": "Insecta"
+  },
+  "Patiria miniata": {
+    "common": "Bat Star",
+    "iconic_taxon": "Animalia"
+  },
+  "Pelecanus occidentalis": {
+    "common": "Brown Pelican",
+    "iconic_taxon": "Aves"
+  },
+  "Pelecanus occidentalis californicus": {
+    "common": "California Brown Pelican",
+    "iconic_taxon": "Aves"
+  },
+  "Phyllospadix torreyi": {
+    "common": "Torrey's Surfgrass",
+    "iconic_taxon": "Plantae"
+  },
+  "Pinus torreyana": {
+    "common": "Torrey pine",
+    "iconic_taxon": "Plantae"
+  },
+  "Pisaster ochraceus": {
+    "common": "Ochre Sea Star",
+    "iconic_taxon": "Animalia"
+  },
+  "Pollicipes polymerus": {
+    "common": "Gooseneck Barnacle",
+    "iconic_taxon": "Animalia"
+  },
+  "Procyon lotor": {
+    "common": "Common Raccoon",
+    "iconic_taxon": "Mammalia"
+  },
+  "Pseudobatos productus": {
+    "common": "Shovelnose Guitarfish",
+    "iconic_taxon": "Animalia"
+  },
+  "Pseudognaphalium biolettii": {
+    "common": "two-color rabbit tobacco",
+    "iconic_taxon": "Plantae"
+  },
+  "Rhus integrifolia": {
+    "common": "lemonade berry",
+    "iconic_taxon": "Plantae"
+  },
+  "Salvia mellifera": {
+    "common": "black sage",
+    "iconic_taxon": "Plantae"
+  },
+  "Sayornis nigricans": {
+    "common": "Black Phoebe",
+    "iconic_taxon": "Aves"
+  },
+  "Sceloporus occidentalis": {
+    "common": "Western Fence Lizard",
+    "iconic_taxon": "Reptilia"
+  },
+  "Schistocerca nitens": {
+    "common": "Gray Bird Grasshopper",
+    "iconic_taxon": "Insecta"
+  },
+  "Selasphorus sasin": {
+    "common": "Allen's Hummingbird",
+    "iconic_taxon": "Aves"
+  },
+  "Setophaga coronata": {
+    "common": "Yellow-rumped Warbler",
+    "iconic_taxon": "Aves"
+  },
+  "Setophaga townsendi": {
+    "common": "Townsend's Warbler",
+    "iconic_taxon": "Aves"
+  },
+  "Sialia mexicana": {
+    "common": "Western Bluebird",
+    "iconic_taxon": "Aves"
+  },
+  "Sisyrinchium bellum": {
+    "common": "western blue-eyed grass",
+    "iconic_taxon": "Plantae"
+  },
+  "Spinus psaltria": {
+    "common": "Lesser Goldfinch",
+    "iconic_taxon": "Aves"
+  },
+  "Steatoda nobilis": {
+    "common": "Noble False Widow",
+    "iconic_taxon": "Arachnida"
+  },
+  "Sylvilagus audubonii": {
+    "common": "Desert Cottontail",
+    "iconic_taxon": "Mammalia"
+  },
+  "Thalasseus maximus": {
+    "common": "Royal Tern",
+    "iconic_taxon": "Aves"
+  },
+  "Tivela stultorum": {
+    "common": "Pismo Clam",
+    "iconic_taxon": "Mollusca"
+  },
+  "Triakis semifasciata": {
+    "common": "Leopard Shark",
+    "iconic_taxon": "Animalia"
+  },
+  "Trifolium repens": {
+    "common": "white clover",
+    "iconic_taxon": "Plantae"
+  },
+  "Tringa semipalmata": {
+    "common": "Willet",
+    "iconic_taxon": "Aves"
+  },
+  "Tursiops truncatus": {
+    "common": "Common Bottlenose Dolphin",
+    "iconic_taxon": "Mammalia"
+  },
+  "Tyrannus vociferans": {
+    "common": "Cassin's Kingbird",
+    "iconic_taxon": "Aves"
+  },
+  "Urile penicillatus": {
+    "common": "Brandt's Cormorant",
+    "iconic_taxon": "Aves"
+  },
+  "Urobatis halleri": {
+    "common": "Haller's Round Ray",
+    "iconic_taxon": "Animalia"
+  },
+  "Vanessa cardui": {
+    "common": "Painted Lady",
+    "iconic_taxon": "Insecta"
+  },
+  "Velella velella": {
+    "common": "By-the-wind Sailor",
+    "iconic_taxon": "Animalia"
+  },
+  "Zalophus californianus": {
+    "common": "California Sea Lion",
+    "iconic_taxon": "Mammalia"
+  },
+  "Zenaida macroura": {
+    "common": "Mourning Dove",
+    "iconic_taxon": "Aves"
+  }
+}
