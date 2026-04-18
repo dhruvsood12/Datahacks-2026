@@ -9,7 +9,7 @@ dist/
 build/
 
 # Large raw data (too big for git — get from Google Drive)
-data/inaturalist.csv
+
 
 # Jupyter checkpoints
 .ipynb_checkpoints/
