@@ -320,6 +320,8 @@ class Predictor:
         species_filter: Optional[List[str]] = None,
         threshold: float = 0.5,
         include_low_confidence: bool = True,
+        climatology: Optional[pd.DataFrame] = None,
+        max_climatology_dist_m: float = 500.0,
     ) -> Dict[str, Any]:
         """
         Predict species probabilities over a regular spatial grid.
@@ -364,22 +366,54 @@ class Predictor:
         lats = np.linspace(lat_min, lat_max, n_lat)
         lons = np.linspace(lon_min, lon_max, n_lon)
 
-        # Use scaler mean for temperature and humidity as baseline
-        # (temperature_offset then shifts temp; humidity stays at mean)
-        baseline_temp = float(self._scaler.mean_[0])      # temperature_c mean
-        baseline_hum  = float(self._scaler.mean_[1])      # humidity_pct mean
+        # ── Per-cell climate ─────────────────────────────────────────────────
+        # If a sensor climatology DataFrame is supplied, snap each grid cell to
+        # its nearest climatology cell (within max_climatology_dist_m) and use
+        # the real temperature/humidity at that location.  This is what makes
+        # the warming counterfactual produce a spatially heterogeneous response.
+        # If no climatology is supplied, fall back to the legacy scaler-mean
+        # behaviour so existing callers / tests are unaffected.
+        # ─────────────────────────────────────────────────────────────────────
+        from scipy.spatial import KDTree
+        from pipeline.ingest import _latlon_to_xy_metres
 
-        # Build observations for every grid point
+        # Cartesian product of lats × lons → (n_lat*n_lon, 2)
+        lat_grid, lon_grid = np.meshgrid(lats, lons, indexing="ij")
+        flat_lat = lat_grid.ravel()
+        flat_lon = lon_grid.ravel()
+
+        if climatology is not None and not climatology.empty:
+            clim_xy = _latlon_to_xy_metres(
+                climatology["lat"].values, climatology["lon"].values
+            )
+            grid_xy = _latlon_to_xy_metres(flat_lat, flat_lon)
+            tree = KDTree(clim_xy)
+            dists, idx = tree.query(grid_xy, k=1, workers=-1)
+
+            cell_temp = climatology["temperature_c"].values[idx]
+            cell_hum  = climatology["humidity_pct"].values[idx]
+
+            # Cells beyond max_climatology_dist_m fall back to scaler mean
+            far = dists > max_climatology_dist_m
+            if far.any():
+                cell_temp = cell_temp.copy()
+                cell_hum  = cell_hum.copy()
+                cell_temp[far] = float(self._scaler.mean_[0])
+                cell_hum[far]  = float(self._scaler.mean_[1])
+        else:
+            cell_temp = np.full(flat_lat.shape, float(self._scaler.mean_[0]))
+            cell_hum  = np.full(flat_lat.shape, float(self._scaler.mean_[1]))
+
+        # Build observations for every grid point with its real (or fallback) climate
         grid_obs = []
-        for lat in lats:
-            for lon in lons:
-                grid_obs.append({
-                    "temperature_c": baseline_temp,
-                    "humidity_pct": baseline_hum,
-                    "lat": float(lat),
-                    "lon": float(lon),
-                    "day_of_year": int(day_of_year),
-                })
+        for i in range(len(flat_lat)):
+            grid_obs.append({
+                "temperature_c": float(cell_temp[i]),
+                "humidity_pct": float(cell_hum[i]),
+                "lat": float(flat_lat[i]),
+                "lon": float(flat_lon[i]),
+                "day_of_year": int(day_of_year),
+            })
 
         X_scaled = self._build_feature_batch(grid_obs, temperature_offset)
         probs_flat = self._model.predict_proba(X_scaled)  # (n_lat*n_lon, S)

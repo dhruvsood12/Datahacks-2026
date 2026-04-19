@@ -1,314 +1,201 @@
 """
-api/main.py — FastAPI backend for the Biosphere UCSD frontend.
+api/main.py — FastAPI HTTP layer wrapping the trained SDM.
 
-Exposes four endpoints that exactly match the frontend contract in api.ts:
+Run locally:
+    uvicorn api.main:app --reload --port 8000
 
-    GET  /health               → { ok: true }
-    GET  /species              → Species[]
-    GET  /heatmap_climatology  → ClimateCell[]
-    POST /predict_grid         → SuitabilityCell[]
+Endpoints
+─────────
+  GET  /health                — model status + counts
+  GET  /species               — sorted species metadata + spatial CV AUC
+  GET  /heatmap_climatology   — raw per-cell sensor temperature/humidity
+  POST /predict_grid          — species probability grid w/ per-cell climate
+                                + counterfactual warming offset
+  GET  /bounds                — spatial extent of the climatology
 
-All longitude fields use "lng" (not "lon") to match the frontend types.
-
-Start with:
-    uvicorn api.main:app --host 0.0.0.0 --port 8000 --reload
+The Predictor and climatology are loaded once at startup and reused on
+every request.  The map bounding box is locked server-side to the actual
+extent of the UCSD sensor data so callers can't ask for predictions in
+regions the model never saw.
 """
 
-import json
-import logging
-import sys
-from pathlib import Path
-from typing import List, Literal, Optional
+from __future__ import annotations
 
-import numpy as np
+import logging
+from typing import List, Optional
+
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
-# Make sure project root is on sys.path when run directly
-ROOT = Path(__file__).parent.parent
-if str(ROOT) not in sys.path:
-    sys.path.insert(0, str(ROOT))
-
-from config import HEAT_MAP_PATH, MODELS_DIR
-from pipeline.ingest import build_sensor_climatology, load_heat_map
+from api.climatology import climatology_bounds, load_climatology
 from pipeline.inference import Predictor
 
-logging.basicConfig(level=logging.INFO, format="%(levelname)-8s %(name)s  %(message)s")
-logger = logging.getLogger(__name__)
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s  %(levelname)-8s  %(name)s  %(message)s",
+)
+logger = logging.getLogger("api")
 
-# ---------------------------------------------------------------------------
-# Constants — must match frontend ucsdData.ts UCSD_BOUNDS
-# ---------------------------------------------------------------------------
-BOUNDS = dict(west=-117.245, east=-117.220, south=32.873, north=32.892)
-GRID_STEPS = 28          # 28×28 = 784 cells, matches frontend buildGrid(28)
-BASELINE_DOY = 150       # day used to precompute per-species baseline / sensitivity
+# ──────────────────────────────────────────────────────────────────────────
+# App + CORS
+# ──────────────────────────────────────────────────────────────────────────
+app = FastAPI(
+    title="UCSD Climate Shift API",
+    description=(
+        "Counterfactual species distribution model for the UCSD campus.  "
+        "Trained on iNaturalist research-grade observations + a 13-session "
+        "mobile temperature/humidity sensor walk."
+    ),
+    version="1.0.0",
+)
 
-# Maps iNaturalist iconic_taxon_name → frontend category enum
-ICONIC_TO_CATEGORY: dict[str, str] = {
-    "Aves":           "bird",
-    "Mammalia":       "mammal",
-    "Reptilia":       "reptile",
-    "Amphibia":       "reptile",
-    "Plantae":        "plant",
-    "Insecta":        "insect",
-    "Arachnida":      "insect",
-    "Fungi":          "plant",
-    "Chromista":      "plant",
-    "Animalia":       "mammal",
-    "Protozoa":       "plant",
-}
-
-# ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
-
-def _slug(taxon_name: str) -> str:
-    """'Pinus torreyana' → 'pinus_torreyana'"""
-    return taxon_name.lower().replace(" ", "_").replace("-", "_")
-
-
-# ---------------------------------------------------------------------------
-# App
-# ---------------------------------------------------------------------------
-app = FastAPI(title="Biosphere UCSD API", version="0.1.0")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
+    # Any localhost port — the demo runs on whatever port is free.
+    allow_origin_regex=r"^http://(localhost|127\.0\.0\.1)(:\d+)?$",
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Module-level singletons — populated at startup
-_predictor:      Optional[Predictor]  = None
-_climate_cells:  Optional[List[dict]] = None
-_species_cache:  Optional[List[dict]] = None
-_slug_to_taxon:  Optional[dict]       = None
+# ──────────────────────────────────────────────────────────────────────────
+# Singletons (loaded at startup)
+# ──────────────────────────────────────────────────────────────────────────
+_PREDICTOR: Optional[Predictor] = None
 
 
-# ---------------------------------------------------------------------------
-# Startup: load everything once
-# ---------------------------------------------------------------------------
 @app.on_event("startup")
-async def _startup() -> None:
-    global _predictor, _climate_cells, _species_cache, _slug_to_taxon
-
-    logger.info("Loading model artefacts…")
-    _predictor = Predictor.load()
-
-    logger.info("Building climatology cells…")
-    _climate_cells = _build_climate_cells()
-
-    logger.info("Building species metadata cache (runs 2 grid predictions)…")
-    _species_cache, _slug_to_taxon = _build_species_cache()
-
-    logger.info("Startup complete — %d species, %d climate cells",
-                len(_species_cache), len(_climate_cells))
+def _warm_up() -> None:
+    global _PREDICTOR
+    logger.info("Warming up: loading Predictor + climatology …")
+    _PREDICTOR = Predictor.load()
+    load_climatology()
+    logger.info("Ready.")
 
 
-# ---------------------------------------------------------------------------
-# Startup helpers
-# ---------------------------------------------------------------------------
-
-def _build_climate_cells() -> List[dict]:
-    """
-    Load sensor climatology, filter to UCSD bounds, normalise temperature
-    to [0, 1] (cool=0, warm=1), return as ClimateCell list.
-    Value 1.0 = warmest campus microclimate (exposed ridge / parking lot).
-    Value 0.0 = coolest (canyon bottom / coast-facing slope).
-    """
-    sensor_df   = load_heat_map(HEAT_MAP_PATH)
-    climatology = build_sensor_climatology(sensor_df)
-
-    buf  = 0.008   # small buffer so edge cells are included
-    mask = (
-        (climatology["lat"] >= BOUNDS["south"] - buf) &
-        (climatology["lat"] <= BOUNDS["north"] + buf) &
-        (climatology["lon"] >= BOUNDS["west"]  - buf) &
-        (climatology["lon"] <= BOUNDS["east"]  + buf)
-    )
-    clim = climatology[mask].copy()
-    if clim.empty:
-        logger.warning("No climatology cells within UCSD bounds — using full extent")
-        clim = climatology.copy()
-
-    t_min, t_max = clim["temperature_c"].min(), clim["temperature_c"].max()
-    if t_max > t_min:
-        clim = clim.assign(value=(clim["temperature_c"] - t_min) / (t_max - t_min))
-    else:
-        clim = clim.assign(value=0.5)
-
-    return [
-        {"lat": round(float(r["lat"]), 6),
-         "lng": round(float(r["lon"]), 6),      # frontend uses "lng"
-         "value": round(float(r["value"]), 4)}
-        for _, r in clim.iterrows()
-    ]
+def _predictor() -> Predictor:
+    if _PREDICTOR is None:
+        raise HTTPException(503, "Predictor not yet loaded")
+    return _PREDICTOR
 
 
-def _build_species_cache() -> tuple[List[dict], dict]:
-    """
-    Run two 28×28 predict_grid calls (0 °C and +1 °C) to compute per-species
-    baseline probability and warming sensitivity, then join with metadata.
-    """
-    meta_path    = MODELS_DIR / "species_metadata.json"
-    cv_auc_path  = MODELS_DIR / "species_auc_spatial_cv.json"
-    filt_path    = MODELS_DIR / "species_labels_filtered.json"
-
-    with open(meta_path) as f:
-        meta = json.load(f)
-
-    # Spatial CV AUC → per-species confidence score
-    cv_auc_map: dict[str, float] = {}
-    if cv_auc_path.exists():
-        with open(cv_auc_path) as f:
-            raw_cv = json.load(f)
-        for sp, folds in raw_cv.items():
-            valid = [v for v in folds if v is not None]
-            cv_auc_map[sp] = float(np.mean(valid)) if valid else 0.70
-
-    filtered_set: set[str] = set()
-    if filt_path.exists():
-        with open(filt_path) as f:
-            filtered_set = set(json.load(f))
-
-    # ── predict_grid at 0 °C and +1 °C ────────────────────────────────
-    common_kwargs = dict(
-        lat_min=BOUNDS["south"], lat_max=BOUNDS["north"],
-        lon_min=BOUNDS["west"],  lon_max=BOUNDS["east"],
-        day_of_year=BASELINE_DOY,
-        n_lat=GRID_STEPS, n_lon=GRID_STEPS,
-    )
-    grid_base = _predictor.predict_grid(temperature_offset=0.0, **common_kwargs)
-    grid_warm = _predictor.predict_grid(temperature_offset=1.0, **common_kwargs)
-
-    species_names = grid_base["species"]                        # ordered list (S,)
-    probs_base    = np.array(grid_base["probabilities"])        # (n_lat, n_lon, S)
-    probs_warm    = np.array(grid_warm["probabilities"])
-
-    mean_base = probs_base.mean(axis=(0, 1))                    # (S,)
-    sensitivity  = probs_warm.mean(axis=(0, 1)) - mean_base     # (S,)
-
-    cache: List[dict] = []
-    slug_to_taxon: dict[str, str] = {}
-
-    for idx, taxon in enumerate(species_names):
-        m        = meta.get(taxon, {})
-        common   = m.get("common", taxon)
-        iconic   = m.get("iconic_taxon", "Unknown")
-        category = ICONIC_TO_CATEGORY.get(iconic, "plant")
-
-        # Confidence: spatial CV AUC clamped to [0.50, 0.99]
-        conf = float(np.clip(cv_auc_map.get(taxon, 0.75), 0.50, 0.99))
-        # If species didn't pass spatial CV threshold, cap at 0.70
-        if taxon not in filtered_set and filtered_set:
-            conf = min(conf, 0.70)
-
-        slug = _slug(taxon)
-        slug_to_taxon[slug] = taxon
-
-        cache.append({
-            "id":             slug,
-            "commonName":     common,
-            "scientificName": taxon,
-            "category":       category,
-            "baseline":       round(float(mean_base[idx]), 4),
-            "sensitivity":    round(float(sensitivity[idx]), 4),
-            "confidence":     round(conf, 4),
-        })
-
-    cache.sort(key=lambda x: x["commonName"])
-    return cache, slug_to_taxon
-
-
-# ---------------------------------------------------------------------------
-# Pydantic schemas
-# ---------------------------------------------------------------------------
-
+# ──────────────────────────────────────────────────────────────────────────
+# Schemas
+# ──────────────────────────────────────────────────────────────────────────
 class PredictGridRequest(BaseModel):
-    species_id:  str
-    warming_c:   float
-    day_of_year: int
+    species: str = Field(..., description="Scientific (taxon) name to predict")
+    day_of_year: int = Field(196, ge=1, le=366, description="Day of year, 1-366")
+    temperature_offset: float = Field(
+        0.0, ge=-5.0, le=10.0,
+        description="Counterfactual °C to add to baseline temperature",
+    )
+    n_lat: int = Field(40, ge=5, le=80, description="Grid rows")
+    n_lon: int = Field(40, ge=5, le=80, description="Grid cols")
+    threshold: float = Field(0.5, ge=0.0, le=1.0)
 
 
-class SuitabilityCell(BaseModel):
-    lat:        float
-    lng:        float
-    suitability: float
-    confidence: float
-
-
-# ---------------------------------------------------------------------------
+# ──────────────────────────────────────────────────────────────────────────
 # Endpoints
-# ---------------------------------------------------------------------------
-
+# ──────────────────────────────────────────────────────────────────────────
 @app.get("/health")
 def health() -> dict:
-    """GET /health — { ok: true }"""
-    return {"ok": True}
+    return _predictor().health()
+
+
+@app.get("/bounds")
+def bounds() -> dict:
+    return climatology_bounds()
 
 
 @app.get("/species")
-def list_species() -> List[dict]:
-    """GET /species — Species[] matching frontend interface."""
-    return _species_cache
+def species(only_high_confidence: bool = False) -> dict:
+    """Return species sorted by spatial CV AUC desc (NaN AUCs at the bottom)."""
+    raw = _predictor().list_species(only_high_confidence=only_high_confidence)
+
+    def _key(s: dict) -> tuple:
+        auc = s.get("spatial_cv_auc")
+        # Sort: high AUC first, then None at end
+        return (auc is None, -(auc or 0.0))
+
+    raw.sort(key=_key)
+    return {"species": raw, "count": len(raw)}
 
 
 @app.get("/heatmap_climatology")
-def heatmap_climatology() -> List[dict]:
-    """GET /heatmap_climatology — ClimateCell[] for the real-climate heatmap layer."""
-    return _climate_cells
+def heatmap_climatology() -> dict:
+    """Return per-cell sensor climatology as a flat list."""
+    df = load_climatology()
+    return {
+        "cells": [
+            {
+                "lat": float(r.lat),
+                "lon": float(r.lon),
+                "temperature_c": float(r.temperature_c),
+                "humidity_pct": float(r.humidity_pct),
+            }
+            for r in df.itertuples(index=False)
+        ],
+        "count": int(len(df)),
+        "temp_min": float(df["temperature_c"].min()),
+        "temp_max": float(df["temperature_c"].max()),
+    }
 
 
-@app.post("/predict_grid", response_model=List[SuitabilityCell])
-def predict_grid(req: PredictGridRequest) -> List[SuitabilityCell]:
+@app.post("/predict_grid")
+def predict_grid(req: PredictGridRequest) -> dict:
     """
-    POST /predict_grid — run the SDM for one species at one warming scenario.
-
-    Body: { species_id: str, warming_c: float, day_of_year: int }
-    Returns a flat list of SuitabilityCell covering the 28×28 UCSD grid.
-
-    confidence per cell:
-        base_confidence (spatial CV AUC) reduced slightly with warming amount,
-        clamped to [0.30, 0.99].  Mirrors the mock formula in ucsdData.ts.
+    Predict species probability over a spatial grid clamped to the climatology
+    extent, with real per-cell temperature + humidity + counterfactual offset.
     """
-    taxon = _slug_to_taxon.get(req.species_id)
-    if taxon is None:
-        raise HTTPException(status_code=404,
-                            detail=f"Species '{req.species_id}' not found. "
-                                   f"Call GET /species for valid ids.")
+    predictor = _predictor()
 
-    grid = _predictor.predict_grid(
-        lat_min=BOUNDS["south"],
-        lat_max=BOUNDS["north"],
-        lon_min=BOUNDS["west"],
-        lon_max=BOUNDS["east"],
+    # Validate species exists
+    known = {s["taxon_name"] for s in predictor.list_species()}
+    if req.species not in known:
+        raise HTTPException(400, f"Unknown species: {req.species}")
+
+    bounds_ = climatology_bounds()
+    clim = load_climatology()
+
+    grid = predictor.predict_grid(
+        lat_min=bounds_["lat_min"],
+        lat_max=bounds_["lat_max"],
+        lon_min=bounds_["lon_min"],
+        lon_max=bounds_["lon_max"],
         day_of_year=req.day_of_year,
-        temperature_offset=req.warming_c,
-        n_lat=GRID_STEPS,
-        n_lon=GRID_STEPS,
-        species_filter=[taxon],
+        temperature_offset=req.temperature_offset,
+        n_lat=req.n_lat,
+        n_lon=req.n_lon,
+        species_filter=[req.species],
+        threshold=req.threshold,
         include_low_confidence=True,
+        climatology=clim,
     )
 
-    lats  = grid["lats"]                            # (n_lat,)
-    lons  = grid["lons"]                            # (n_lon,)
-    probs = np.array(grid["probabilities"])          # (n_lat, n_lon, 1)
-
-    # Per-species base confidence, reduced by warming (matches mock formula)
-    sp_meta    = next((s for s in _species_cache if s["id"] == req.species_id), None)
-    base_conf  = sp_meta["confidence"] if sp_meta else 0.75
-    cell_conf  = float(np.clip(base_conf - abs(req.warming_c) * 0.04, 0.30, 0.99))
-
-    cells: List[SuitabilityCell] = []
+    # Flatten (lat, lon, prob) so the frontend doesn't have to reshape
+    cells = []
+    lats = grid["lats"]
+    lons = grid["lons"]
+    probs = grid["probabilities"]  # n_lat × n_lon × 1
     for i, lat in enumerate(lats):
-        for k, lon in enumerate(lons):
-            cells.append(SuitabilityCell(
-                lat=round(float(lat), 6),
-                lng=round(float(lon), 6),           # "lng" not "lon"
-                suitability=round(float(probs[i, k, 0]), 4),
-                confidence=cell_conf,
-            ))
+        for j, lon in enumerate(lons):
+            p = probs[i][j][0]
+            cells.append({"lat": float(lat), "lon": float(lon), "prob": float(p)})
 
-    return cells
+    # Pull species metadata + AUC for the badge
+    sp_meta = next((s for s in predictor.list_species() if s["taxon_name"] == req.species), {})
+
+    return {
+        "species": req.species,
+        "common_name": sp_meta.get("common_name", req.species),
+        "iconic_taxon": sp_meta.get("iconic_taxon", "Unknown"),
+        "spatial_cv_auc": sp_meta.get("spatial_cv_auc"),
+        "high_confidence": sp_meta.get("high_confidence", False),
+        "day_of_year": req.day_of_year,
+        "temperature_offset": req.temperature_offset,
+        "n_lat": req.n_lat,
+        "n_lon": req.n_lon,
+        "cells": cells,
+        "n_above_threshold": sum(1 for c in cells if c["prob"] >= req.threshold),
+        "n_total": len(cells),
+    }
