@@ -1,0 +1,35 @@
+@import "tailwindcss";
+
+:root {
+  --background: #0a0a0a;
+  --foreground: #ededed;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+html,
+body {
+  height: 100%;
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans), system-ui, sans-serif;
+}
+
+/* Leaflet container needs an explicit non-white bg in dark mode so the
+   space between tile loads doesn't flash white. */
+.leaflet-container {
+  background: #050505 !important;
+  outline: none;
+}
+.leaflet-control-attribution {
+  background: rgba(0, 0, 0, 0.6) !important;
+  color: #71717a !important;
+}
+.leaflet-control-attribution a {
+  color: #a1a1aa !important;
+}
