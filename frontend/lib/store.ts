@@ -59,9 +59,14 @@ export const useStore = create<State>((set, get) => ({
     set({ loading: true, error: null });
     try {
       const [clim, sp] = await Promise.all([getClimatology(), getSpecies(true)]);
+      // Auto-select the first species from the loaded list so the dropdown
+      // always starts on a real option (avoids the browser snapping to a
+      // different option when the select renders before options are ready).
+      const firstSpecies = sp.species[0]?.taxon_name ?? DEFAULT_SPECIES;
       set({
         climatology: clim,
         speciesList: sp.species,
+        selectedSpecies: firstSpecies,
       });
       // First baseline + current grid load
       await get().refreshGrid();

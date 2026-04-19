@@ -198,4 +198,5 @@ def predict_grid(req: PredictGridRequest) -> dict:
         "cells": cells,
         "n_above_threshold": sum(1 for c in cells if c["prob"] >= req.threshold),
         "n_total": len(cells),
+        "mean_prob": round(sum(c["prob"] for c in cells) / len(cells), 4) if cells else 0.0,
     }

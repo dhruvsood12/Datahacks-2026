@@ -65,6 +65,7 @@ export type PredictGridResponse = {
   cells: GridCell[];
   n_above_threshold: number;
   n_total: number;
+  mean_prob: number;
 };
 
 // ─── Fetchers ─────────────────────────────────────────────────────────────

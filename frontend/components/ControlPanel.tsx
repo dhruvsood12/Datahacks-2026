@@ -48,11 +48,12 @@ export default function ControlPanel() {
   const setWarming = useStore((s) => s.setWarming);
 
   const sp = speciesList.find((s) => s.taxon_name === selectedSpecies);
-  const habFrac = (g: typeof current) =>
-    g ? g.n_above_threshold / g.n_total : 0;
+  // Mean probability across all grid cells — always non-zero and always
+  // responds to warming, even for species with low overall habitat coverage.
+  const meanProb = (g: typeof current) => (g ? (g.mean_prob ?? 0) : 0);
 
-  const baseFrac = habFrac(baseline);
-  const curFrac = habFrac(current);
+  const baseFrac = meanProb(baseline);
+  const curFrac = meanProb(current);
   const delta = curFrac - baseFrac;
 
   return (
@@ -147,7 +148,7 @@ export default function ControlPanel() {
       {/* Range readout */}
       <section className="rounded border border-zinc-800 bg-zinc-900/40 p-3">
         <div className="text-xs uppercase tracking-wider text-zinc-400">
-          Habitable cells (p ≥ 0.5)
+          Mean habitat suitability
         </div>
         <div className="mt-2 flex items-end gap-3 font-mono">
           <div>
@@ -169,9 +170,9 @@ export default function ControlPanel() {
             <div className="text-[10px] text-zinc-500">Δ</div>
             <div
               className={`text-lg ${
-                delta > 0.005
+                delta > 0.001
                   ? "text-emerald-400"
-                  : delta < -0.005
+                  : delta < -0.001
                     ? "text-red-400"
                     : "text-zinc-400"
               }`}
