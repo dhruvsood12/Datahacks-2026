@@ -1,119 +1,200 @@
-# UCSD Climate Shift
+# 🌍 EcoShift  
+### Predicting Biodiversity Under Climate Warming
 
-A counterfactual species distribution model (SDM) for the UCSD campus, built for **DataHacks 2026** (ML/AI track · Environment, Climate & Energy Sciences).
+**DataHacks 2026 · AI/ML Track · Climate & Environment**
 
-Drag a slider to warm UCSD by N°C and watch where each species' habitat moves on a real map of campus microclimate.
-
----
-
-## What this is
-
-We trained a multi-label MLP over **iNaturalist research-grade observations** within UCSD, using per-cell **temperature + humidity** from a 13-session mobile sensor walk as the climate features. The model learns where each species is happy in microclimate space, then we project that surface back onto the map under counterfactual warming.
-
-- **Backend** — FastAPI wrapping a trained PyTorch SDM.
-- **Frontend** — Next.js 16 + react-leaflet showing two layers: the sensor climatology and the predicted species probability surface, recomputed live as the warming offset changes.
-- **Scope** — UCSD campus only (lat 32.853–32.894, lon -117.257 to -117.212). 1,641 climatology cells. 68 high-confidence species (spatial 5×5 block CV AUC ≥ 0.65).
+EcoShift is an AI-driven climate–biodiversity visualization that predicts how rising temperatures reshape species distributions using real environmental and ecological data.
 
 ---
 
-## Run locally
+## 🚀 Overview
 
-Two terminals.
+Climate change is not abstract — it is actively reshaping ecosystems.
 
-### 1. Backend (FastAPI on :8000)
+EcoShift makes this visible.
 
-```bash
-cd repo
-python -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt
-pip install -r api/requirements.txt
-uvicorn api.main:app --port 8000
-```
+We combine **real UCSD sensor climate data** with **research-grade iNaturalist species observations** to train a machine learning model that:
 
-The first request loads the Predictor + climatology — give it ~3 seconds.
+- Learns how environmental conditions affect species presence  
+- Predicts biodiversity at any location and time  
+- Simulates warming scenarios (+1°C to +5°C) instantly  
+- Visualizes ecological shifts in an interactive map  
 
-### 2. Frontend (Next.js on :3100)
+👉 The result: a **local, real-time view of how climate change impacts biodiversity**
 
-```bash
-cd repo/frontend
+---
+
+## 🧠 Key Idea
+
+We train a model to learn:
+
+> “Given temperature, humidity, location, and season — which species are likely here?”
+
+Then we ask:
+
+> “What happens if temperature increases by +2°C?”
+
+No retraining. Just a new input.
+
+This enables **counterfactual climate simulation**.
+
+---
+
+## 📊 Data
+
+### 🌡 UCSD Heat Map (Scripps)
+- Mobile weather stations across UCSD campus  
+- Temperature (°C), humidity (%)  
+- Precise location + timestamp  
+- Captures real microclimate variation  
+
+### 🐦 iNaturalist (Research-grade)
+- Verified species observations  
+- Species label, location, time  
+- Represents real biodiversity  
+
+### 🔗 Data Fusion
+- Matched using spatial + temporal proximity:
+  - within **500 meters**
+  - within **2 hours**
+- Efficiently computed using KD-tree  
+
+📌 **Suggested image:**
+- Heatmap visualization of UCSD sensor data  
+- Raw iNaturalist point scatter  
+
+---
+
+## ⚙️ Machine Learning Pipeline
+
+### 1. Ingest
+Join sensor data and species observations using spatial-temporal matching  
+
+### 2. Bias Correction
+Fix observation bias:
+- Spatial thinning (reduce over-sampled regions)  
+- Target-group background sampling (MaxEnt-style)  
+
+### 3. Feature Engineering
+Each data point becomes 6 features:
+- Temperature  
+- Humidity  
+- Latitude  
+- Longitude  
+- sin(day-of-year), cos(day-of-year)  
+
+### 4. Model
+Multi-label neural network (MLP):
+
+
+6 → 128 → 64 → 32 → Species Outputs
+
+
+- Predicts probability for all species simultaneously  
+- Uses:
+  - ReLU  
+  - BatchNorm  
+  - Dropout (0.3)  
+  - BCEWithLogitsLoss  
+  - Per-species class weighting  
+
+### 5. Evaluation
+Spatial cross-validation (5×5 geographic blocks):
+- Prevents spatial data leakage  
+- Ensures real generalization  
+
+Low-performing species (AUC < 0.65) are flagged as low-confidence  
+
+### 6. Inference
+- Predict species probabilities at any location  
+- Generate spatial grids  
+- Apply warming offsets for simulation  
+
+📌 **Suggested diagram:**
+- Pipeline flow diagram (ingest → model → prediction)
+
+---
+
+## 🔮 Counterfactual Simulation
+
+We simulate warming by modifying input temperature:
+
+```python
+temperature_c + offset
++1°C, +2°C, +3°C scenarios
+No retraining required
+All other variables held constant
+
+👉 This answers:
+
+“What would biodiversity look like if it were warmer?”
+
+📌 Suggested visual:
+
+Before vs After heatmap comparison (0°C vs +2°C)
+🗺 Visualization
+
+Interactive frontend includes:
+
+Real heat/climatology layer (UCSD microclimate)
+Species suitability layer (model predictions)
+Warming slider
+Hover + click inspection
+Confidence indicators
+
+📌 Suggested visuals:
+
+Screenshot of map UI
+GIF of warming slider changing predictions
+Hover tooltip example
+🛠 Tech Stack
+
+Backend
+
+Python
+PyTorch
+NumPy / Pandas / Scikit-learn
+FastAPI
+
+Frontend
+
+React / Next.js
+Leaflet / Mapbox / Deck.gl
+▶️ Running Locally
+1. Clone repo
+git clone https://github.com/dhruvsood12/Datahacks-2026.git
+cd Datahacks-2026
+2. Setup environment
+python3 -m venv venv
+source venv/bin/activate
+3. Install dependencies
+pip install torch numpy pandas scikit-learn matplotlib seaborn pyarrow tqdm joblib fastapi uvicorn
+4. Test model
+python -c "from pipeline.inference import Predictor; p=Predictor.load(); print(p.health())"
+5. Run backend
+uvicorn api.main:app --reload
+6. Run frontend
+cd frontend
 npm install
-NEXT_PUBLIC_API_URL=http://localhost:8000 npx next dev --port 3100
-```
+npm run dev
+🎯 Why This Matters
 
-Open <http://localhost:3100>.
+EcoShift turns climate change into something you can see:
 
----
+Identify climate winners (expanding species)
+Identify climate losers (declining species)
+Understand local ecological impact
+Enable data-driven conservation insights
+🔭 Future Work
+Expand beyond UCSD → city / regional scale
+Add more environmental variables (precipitation, vegetation, elevation)
+Improve model accuracy with larger datasets
+Add uncertainty visualization
+Deploy as a real-world ecological monitoring tool
+🏆 DataHacks 2026 Submission
+Track: AI / ML · Climate & Environment
+Bonus: Scripps Challenge (uses UCSD Heat Map + iNaturalist)
+👥 Team
 
-## Endpoints
-
-| Method | Path                    | Purpose |
-|--------|-------------------------|---------|
-| GET    | `/health`               | Predictor status + species counts |
-| GET    | `/bounds`               | Spatial extent of the climatology |
-| GET    | `/species`              | Species sorted by spatial CV AUC desc |
-| GET    | `/heatmap_climatology`  | Per-cell sensor temperature + humidity |
-| POST   | `/predict_grid`         | Probability grid for one species under a warming offset |
-
-`POST /predict_grid` body:
-
-```json
-{
-  "species": "Cotinis mutabilis",
-  "day_of_year": 196,
-  "temperature_offset": 2.0,
-  "n_lat": 40,
-  "n_lon": 40,
-  "threshold": 0.5
-}
-```
-
-Returns a flat list of `{lat, lon, prob}` cells plus species metadata and `n_above_threshold` / `n_total` counts.
-
----
-
-## How the warming counterfactual works
-
-`predict_grid` snaps each grid cell to its nearest real climatology cell (KDTree on equirectangular metres, max 500 m), then **adds** `temperature_offset` to the per-cell baseline temperature before scaling and inference. Humidity, lat, lon, and day-of-year are unchanged. So you're holding everything fixed except the warming, which is the whole point of a counterfactual.
-
-If you run with `climatology=None`, the Predictor falls back to the scaler's mean temperature for every cell (for backwards compatibility with old notebooks).
-
----
-
-## Stack
-
-- **ML** — PyTorch MLP (6 features → 128 → 64 → 32 → N species), BCEWithLogitsLoss with per-species pos_weight, target-group background sampling, spatial 5×5 block cross-validation.
-- **API** — FastAPI 0.115, uvicorn.
-- **UI** — Next.js 16.2, React 19.2, TypeScript, Tailwind v4, Zustand, react-leaflet, CARTO dark basemap.
-
----
-
-## Project layout
-
-```
-repo/
-├── api/                   # FastAPI HTTP layer
-│   ├── main.py
-│   ├── climatology.py     # singleton sensor climatology loader
-│   └── requirements.txt
-├── pipeline/              # data ingest → training → inference
-│   ├── ingest.py          # sensor matching, target-group BG sampling
-│   ├── model.py           # SDM MLP definition
-│   ├── train.py
-│   └── inference.py       # Predictor.predict_grid (with KDTree climate injection)
-├── frontend/              # Next.js v1 visualization
-│   ├── app/
-│   ├── components/Map.tsx, ControlPanel.tsx
-│   └── lib/api.ts, store.ts
-├── data/                  # raw + intermediate parquet
-├── models/                # scaler.pkl, sdm_model.pt, species_labels.json
-├── notebooks/
-├── config.py
-├── train.py
-└── prepare_heat_map.py
-```
-
----
-
-## Authors
-
-Dhruv Sood · Krishang — DataHacks 2026, UCSD.
+Built for DataHacks 2026
+UC San Diego
